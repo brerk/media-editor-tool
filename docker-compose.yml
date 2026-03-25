@@ -1,0 +1,20 @@
+services:
+  media-app:
+    build: .
+    container_name: media-editor-webapp
+    restart: always
+    ports:
+      - "7070:7070"
+
+    volumes:
+      # :Z es vital en Podman para permisos de escritura en el host
+      - ./uploads:/app/uploads:Z
+      - ./outputs:/app/outputs:Z
+
+    # environment:
+      # - PYTHONUNBUFFERED=1
+      # - MAX_UPLOAD_SIZE=500M 
+
+networks:
+  default:
+    driver: bridge
