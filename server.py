@@ -27,14 +27,13 @@ OUTPUT_DIR = Path(os.environ.get("MEDIA_OUTPUT_DIR", _base / "outputs"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+# ── Public API URL (injected into the frontend) ───────────────────────────────
+API_URL: str = os.environ.get("MEDIA_API_URL", "")
+
 app = FastAPI(title="Media Editor Suite")
 
-app.add_middleware(
-    CORSMiddleware, 
-    allow_origins=["*"],
-    allow_methods=["*"], 
-    allow_headers=["*"]
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"],
+                   allow_methods=["*"], allow_headers=["*"])
 
 # Mount routers
 app.include_router(crop_router)
@@ -50,8 +49,13 @@ if static_dir.exists():
 
 @app.get("/")
 async def index():
-    html = Path(__file__).parent / "index.html"
-    return HTMLResponse(html.read_text()) if html.exists() else HTMLResponse("<h1>index.html not found</h1>")
+    html_path = Path(__file__).parent / "index.html"
+    if not html_path.exists():
+        return HTMLResponse("<h1>index.html not found</h1>")
+    content = html_path.read_text()
+    injection = f'<script>window.__API_URL__ = {repr(API_URL)};</script>'
+    content = content.replace("</head>", f"{injection}\n</head>", 1)
+    return HTMLResponse(content)
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -64,10 +68,7 @@ async def upload_file(file: UploadFile = File(...)):
     if ext not in allowed:
         raise HTTPException(400, f"Unsupported file type: {ext or '(none)'}")
 
-    # Save file with original name
-    dest = UPLOAD_DIR / f"{file.filename}"
-    # dest = UPLOAD_DIR / f"{uuid.uuid4().hex}{ext}"
-
+    dest = UPLOAD_DIR / f"{uuid.uuid4().hex}{ext}"
     try:
         with dest.open("wb") as f:
             shutil.copyfileobj(file.file, f)
@@ -97,6 +98,7 @@ async def get_config():
     return {
         "upload_dir": str(UPLOAD_DIR),
         "output_dir": str(OUTPUT_DIR),
+        "api_url":    API_URL,
     }
 
 @app.get("/video")
@@ -171,12 +173,19 @@ if __name__ == "__main__":
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=7070)
     parser.add_argument("--open", action="store_true")
+    parser.add_argument("--api-url", default="",
+        help="Public URL the browser uses to reach this server "
+             "(e.g. http://192.168.1.50:7070). "
+             "Defaults to same-origin. Also via MEDIA_API_URL env var.")
     args = parser.parse_args()
-    # if args.open:
-    #     import webbrowser, threading
-    #     threading.Timer(1.2, 
-    #                     lambda: webbrowser.open(
-    #                         f"http://{args.host}:{args.port}")
-    #                 ).start()
+    global API_URL
+    if args.api_url:
+        API_URL = args.api_url
+    elif not API_URL and args.host not in ("0.0.0.0", ""):
+        API_URL = f"http://{args.host}:{args.port}"
+    if args.open:
+        import webbrowser, threading
+        threading.Timer(1.2, lambda: webbrowser.open(
+            f"http://{args.host}:{args.port}")).start()
     print(f"\n  Media Editor  →  http://{args.host}:{args.port}\n")
     uvicorn.run(app, host=args.host, port=args.port, reload=False)

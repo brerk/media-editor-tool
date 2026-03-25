@@ -3,11 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Media Editor Tool</title>
-
-<link rel="icon" type="image/png" href="/static/favicon.png?v=1">
-<link rel="icon" type="image/png" href="/static/logo.png">
-
+<title>Media Editor</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 :root {
@@ -589,16 +585,19 @@ function settingsLoad() {
 
 function settingsDefaults() {
   return {
-    apiUrl:      'http://127.0.0.1:7070',
-    autoDl:      true,
-    defaultCrf:  '18',
+    // __API_URL__ is injected by server.py at serve time (--api-url arg).
+    // Falls back to same origin so it works without any config too.
+    apiUrl:        window.__API_URL__ || window.location.origin,
+    autoDl:        true,
+    defaultCrf:    '18',
     defaultPreset: 'fast',
   }
 }
 
 const cfg = { ...settingsDefaults(), ...settingsLoad() }
+// If the server injected a URL, always prefer it over a stale localStorage value
+if (window.__API_URL__) cfg.apiUrl = window.__API_URL__
 
-// Live API base — tools use this instead of the hardcoded constant
 const API = () => cfg.apiUrl.replace(/\/$/, '')
 
 window.settingsSave = () => {
