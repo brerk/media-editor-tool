@@ -1,5 +1,7 @@
 // shared.js — shared utilities for all tools
-export const API = 'http://127.0.0.1:7070'
+// API base URL: injected by server at serve time (window.__API_URL__),
+// or falls back to same origin so it works locally without any config.
+export const API = (window.__API_URL__ || window.location.origin).replace(/\/$/, '')
 
 export function fmtTime(t) {
   const h = Math.floor(t / 3600)
