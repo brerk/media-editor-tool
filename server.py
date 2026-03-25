@@ -68,7 +68,8 @@ async def upload_file(file: UploadFile = File(...)):
     if ext not in allowed:
         raise HTTPException(400, f"Unsupported file type: {ext or '(none)'}")
 
-    dest = UPLOAD_DIR / f"{uuid.uuid4().hex}{ext}"
+    # dest = UPLOAD_DIR / f"{uuid.uuid4().hex}{ext}"
+    dest = UPLOAD_DIR / f"{file.filename}"
     try:
         with dest.open("wb") as f:
             shutil.copyfileobj(file.file, f)
@@ -188,6 +189,7 @@ def _main():
         threading.Timer(1.2, lambda: webbrowser.open(
             f"http://{args.host}:{args.port}")).start()
     print(f"\n  Media Editor  →  http://{args.host}:{args.port}\n")
+    print("API URL: ", API_URL)
     uvicorn.run(app, host=args.host, port=args.port, reload=False)
 
 if __name__ == "__main__":

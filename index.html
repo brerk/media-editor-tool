@@ -3,11 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ME Tool</title>
-
-<link rel="icon" type="image/png" href="/static/favicon.png?v=1">
-<link rel="icon" type="image/png" href="/static/logo.png">
-
+<title>Media Editor</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 :root {
@@ -184,6 +180,19 @@ button.export-btn:hover{filter:brightness(1.1)}
   border:1px solid var(--border);border-radius:3px;padding:2px 6px;
   font-family:inherit;word-break:break-all;flex:1}
 
+/* last result button */
+.last-result-btn{
+  display:none;align-items:center;gap:6px;
+  background:#1a2218;border:1px solid #4ecb7166;
+  border-radius:3px;padding:3px 8px;cursor:pointer;
+  color:#4ecb71;font-size:8pt;font-family:inherit;
+  transition:background .15s,border-color .15s;
+  width:100%;margin-top:4px;text-align:left;
+}
+.last-result-btn:hover{background:#1f2e1c;border-color:#4ecb71;color:#fff}
+.last-result-btn.visible{display:flex;margin-bottom:4px}
+.last-result-btn .lr-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* upload field */
 .upload-field{
   display:flex;align-items:center;gap:6px;
@@ -341,6 +350,9 @@ button.export-btn:hover{filter:brightness(1.1)}
             <span class="uf-name" id="trim-video-name">Click to upload…</span>
           </div>
         </div>
+        <button class="last-result-btn" id="trim-last-btn" onclick="trimUseLastResult()">
+          <span>↩</span><span class="lr-name" id="trim-last-name"></span>
+        </button>
         <div class="row"><label>Output</label>
           <input type="text" id="trim-output" placeholder="Output filename…">
         </div>
@@ -442,6 +454,9 @@ button.export-btn:hover{filter:brightness(1.1)}
             <span class="uf-name" id="wm-video-name">Click to upload…</span>
           </div>
         </div>
+        <button class="last-result-btn" id="wm-last-btn" onclick="wmUseLastResult()">
+          <span>↩</span><span class="lr-name" id="wm-last-name"></span>
+        </button>
         <div class="row"><label>WM</label>
           <div class="upload-field" onclick="wmUploader.open('image')">
             <span class="uf-icon">🖼</span>
@@ -669,6 +684,38 @@ window.toggleLog = (id) => {
   el.style.display = el.style.display === 'none' ? '' : 'none'
 }
 
+// ── Last result state ────────────────────────────────────────────────────
+// Tracks the most recent export so trim/wm can reuse it
+let lastResult = null  // { path, filename }
+
+function setLastResult(serverPath) {
+  const filename = serverPath.split('/').pop()
+  lastResult = { path: serverPath, filename }
+  // Show the button in trim and wm
+  for (const tool of ['trim', 'wm']) {
+    const btn  = document.getElementById(`${tool}-last-btn`)
+    const name = document.getElementById(`${tool}-last-name`)
+    if (btn && name) {
+      name.textContent = `Use last result: ${filename}`
+      btn.classList.add('visible')
+    }
+  }
+}
+
+window.trimUseLastResult = () => {
+  if (!lastResult) return
+  document.getElementById('trim-video-name').textContent = lastResult.filename
+  document.getElementById('trim-video-name').classList.add('loaded')
+  trimLoadVideo(lastResult.path, lastResult.filename)
+}
+
+window.wmUseLastResult = () => {
+  if (!lastResult) return
+  document.getElementById('wm-video-name').textContent = lastResult.filename
+  document.getElementById('wm-video-name').classList.add('loaded')
+  wmLoadVideo(lastResult.path, lastResult.filename)
+}
+
 // ── Download helper ───────────────────────────────────────────────────────
 function showDownload(bannerId, linkId, nameId, serverPath) {
   const url = `${API()}/download?path=${encodeURIComponent(serverPath)}`
@@ -678,6 +725,8 @@ function showDownload(bannerId, linkId, nameId, serverPath) {
   document.getElementById(nameId).textContent = fname
   document.getElementById(bannerId).classList.add('visible')
   if (cfg.autoDl) autoDownload(serverPath)
+  // Make this result available to other tools
+  setLastResult(serverPath)
 }
 
 // ══════════════════════════════════════════════════════════════════════════
