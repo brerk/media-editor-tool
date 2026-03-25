@@ -167,8 +167,9 @@ async def ws_progress(websocket: WebSocket, tool: str, job_id: str):
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+def _main():
     import uvicorn, argparse
+    global API_URL
     parser = argparse.ArgumentParser(description="Media Editor Suite")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=7070)
@@ -178,7 +179,6 @@ if __name__ == "__main__":
              "(e.g. http://192.168.1.50:7070). "
              "Defaults to same-origin. Also via MEDIA_API_URL env var.")
     args = parser.parse_args()
-    global API_URL
     if args.api_url:
         API_URL = args.api_url
     elif not API_URL and args.host not in ("0.0.0.0", ""):
@@ -189,3 +189,6 @@ if __name__ == "__main__":
             f"http://{args.host}:{args.port}")).start()
     print(f"\n  Media Editor  →  http://{args.host}:{args.port}\n")
     uvicorn.run(app, host=args.host, port=args.port, reload=False)
+
+if __name__ == "__main__":
+    _main()
