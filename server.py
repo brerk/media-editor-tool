@@ -28,7 +28,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Public API URL (injected into the frontend) ───────────────────────────────
-API_URL: str = os.environ.get("MEDIA_API_URL", "")
+API_URL = os.environ.get("MEDIA_API_URL", "")
 
 app = FastAPI(title="Media Editor Suite")
 
