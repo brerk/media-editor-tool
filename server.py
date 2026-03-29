@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import asyncio, shutil, tempfile, uuid
 
-from routers import crop_router, trim_router, watermark_router
+from routers import crop_router, trim_router, watermark_router, pipeline_router
 from routers.utils import get_video_info, VIDEO_EXTS
 
 # ── Directories ──────────────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
 app.include_router(crop_router)
 app.include_router(trim_router)
 app.include_router(watermark_router)
+app.include_router(pipeline_router)
 
 # Serve static files
 static_dir = Path(__file__).parent / "static"
@@ -68,8 +69,7 @@ async def upload_file(file: UploadFile = File(...)):
     if ext not in allowed:
         raise HTTPException(400, f"Unsupported file type: {ext or '(none)'}")
 
-    # dest = UPLOAD_DIR / f"{uuid.uuid4().hex}{ext}"
-    dest = UPLOAD_DIR / f"{file.filename}"
+    dest = UPLOAD_DIR / f"{uuid.uuid4().hex}{ext}"
     try:
         with dest.open("wb") as f:
             shutil.copyfileobj(file.file, f)
@@ -148,7 +148,8 @@ async def ws_progress(websocket: WebSocket, tool: str, job_id: str):
     from routers.crop import get_jobs as crop_jobs
     from routers.trim import get_jobs as trim_jobs
     from routers.watermark import get_jobs as wm_jobs
-    jobs_map = {"crop": crop_jobs, "trim": trim_jobs, "wm": wm_jobs}
+    from routers.pipeline import get_jobs as pipeline_jobs
+    jobs_map = {"crop": crop_jobs, "trim": trim_jobs, "wm": wm_jobs, "pipeline": pipeline_jobs}
     get_jobs = jobs_map.get(tool)
     await websocket.accept()
     try:
@@ -189,7 +190,6 @@ def _main():
         threading.Timer(1.2, lambda: webbrowser.open(
             f"http://{args.host}:{args.port}")).start()
     print(f"\n  Media Editor  →  http://{args.host}:{args.port}\n")
-    print("API URL: ", API_URL)
     uvicorn.run(app, host=args.host, port=args.port, reload=False)
 
 if __name__ == "__main__":

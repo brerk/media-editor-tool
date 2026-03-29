@@ -4,10 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Media Editor</title>
-
-<link rel="icon" type="image/png" href="/static/favicon.png?v=1">
-<link rel="icon" type="image/png" href="/static/logo.png">
-
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 :root {
@@ -17,6 +13,7 @@
   --crop:#f7a35c;   /* orange */
   --trim:#4ecb71;   /* green  */
   --wm:#a78bfa;     /* purple */
+  --pipe:#38bdf8;   /* cyan */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;
@@ -43,7 +40,8 @@ body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospa
 .nav-btn .icon{font-size:16pt;line-height:1}
 .nav-btn[data-tool=crop]{--active-color:var(--crop)}
 .nav-btn[data-tool=trim]{--active-color:var(--trim)}
-.nav-btn[data-tool=wm]  {--active-color:var(--wm)}
+.nav-btn[data-tool=wm]      {--active-color:var(--wm)}
+.nav-btn[data-tool=pipeline]{--active-color:var(--pipe)}
 
 /* ── Layout ── */
 .layout{display:flex;flex:1;overflow:hidden}
@@ -103,6 +101,25 @@ button.success{background:var(--success);color:#000;border:none;font-weight:700}
   font-size:9pt;font-weight:700;letter-spacing:1px;flex-shrink:0}
 .video-area{flex:1;position:relative;background:#000;overflow:hidden;cursor:ew-resize}
 .video-area video{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.play-overlay{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;z-index:2}
+.play-overlay .play-icon{
+  width:56px;height:56px;border-radius:50%;
+  background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;transition:opacity .15s,transform .15s;
+  opacity:0;pointer-events:none;
+}
+.play-overlay:hover .play-icon{opacity:1}
+.play-overlay.paused .play-icon{opacity:.85}
+.play-overlay.paused:hover .play-icon{opacity:1;transform:scale(1.08)}
+.play-btn{background:transparent;border:1px solid #3a3a50;border-radius:4px;
+  color:var(--dim);padding:2px 10px;font-size:11pt;line-height:1;cursor:pointer;
+  transition:color .1s,border-color .1s}
+.play-btn:hover{color:var(--trim);border-color:var(--trim);background:transparent}
+.play-btn.playing{color:var(--trim);border-color:var(--trim)}
+.trim-progress{height:3px;background:var(--trim);position:absolute;bottom:0;left:0;
+  width:0%;transition:none;pointer-events:none;z-index:3}
 .video-area canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 
 .scrubber-wrap{background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;width:100%}
@@ -167,6 +184,22 @@ button.export-btn:hover{filter:brightness(1.1)}
 .pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:4px 0}
 .pos-btn{height:32px;font-size:8pt;padding:2px}
 .pos-btn.sel{background:var(--wm);color:#fff;border-color:var(--wm)}
+
+/* Pipeline pane */
+.pipe-step{background:var(--surface);border:1px solid var(--border);
+  border-radius:4px;margin-bottom:6px;overflow:hidden}
+.pipe-step-header{display:flex;align-items:center;gap:10px;padding:8px 10px;
+  background:var(--surface2);cursor:pointer;user-select:none}
+.pipe-step-header input[type=checkbox]{accent-color:var(--pipe);
+  width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.pipe-step-header .step-label{flex:1;font-size:9pt;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase}
+.pipe-step-header .step-summary{font-size:8pt;color:var(--dim);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.pipe-step-body{padding:8px;display:none;border-top:1px solid var(--border)}
+.pipe-step-body.open{display:block}
+.pipe-title{color:var(--pipe)}
+.pipe-step-header .step-label{color:var(--pipe)}
 
 /* Settings pane */
 .settings-section{margin-bottom:18px}
@@ -249,6 +282,9 @@ button.export-btn:hover{filter:brightness(1.1)}
   </button>
   <button class="nav-btn" data-tool="wm" onclick="switchTool('wm')" title="Watermark">
     <span class="icon">◈</span>WM
+  </button>
+  <button class="nav-btn" data-tool="pipeline" onclick="switchTool('pipeline')" title="Pipeline">
+    <span class="icon">⛓</span>Pipe
   </button>
   <button class="nav-btn" data-tool="settings" onclick="switchTool('settings')" title="Settings" style="margin-top:auto">
     <span class="icon">⚙</span>cfg
@@ -342,12 +378,21 @@ button.export-btn:hover{filter:brightness(1.1)}
       </div>
     </div><!-- /panel -->
     <div class="right">
-      <div class="preview-header" style="color:var(--crop)">PREVIEW<span id="crop-info">  Load a video</span></div>
+      <div class="preview-header" style="color:var(--crop)">
+        PREVIEW
+        <button class="play-btn" id="crop-play-btn" onclick="cropTogglePlay()" title="Space">▶</button>
+        <span id="crop-info" style="margin-left:4px">  Load a video</span>
+        <span style="margin-left:auto;color:#3e3e52;font-size:7pt">Space·K·←→·⇧←→</span>
+      </div>
       <div class="video-area" id="crop-area"
            onmousedown="cropDragStart(event)" onmousemove="cropDragMove(event)"
            onmouseup="cropDragEnd()" onmouseleave="cropDragEnd()">
         <video id="crop-vid" preload="auto"></video>
         <canvas id="crop-overlay"></canvas>
+        <div class="play-overlay paused" id="crop-play-overlay" onclick="cropTogglePlay()">
+          <div class="play-icon" id="crop-play-icon">▶</div>
+        </div>
+        <div class="trim-progress" id="crop-progress-bar" style="background:var(--crop)"></div>
       </div>
       <div class="kf-timeline-wrap" id="crop-kf-wrap"><canvas id="crop-kf-canvas"></canvas></div>
       <div class="scrubber-wrap"><canvas id="crop-scrub"></canvas></div>
@@ -449,10 +494,19 @@ button.export-btn:hover{filter:brightness(1.1)}
       </div>
     </div>
     <div class="right">
-      <div class="preview-header" style="color:var(--trim)">PREVIEW<span id="trim-info">  Load a video</span></div>
-      <div class="video-area" id="trim-area">
+      <div class="preview-header" style="color:var(--trim)">
+        PREVIEW
+        <button class="play-btn" id="trim-play-btn" onclick="trimTogglePlay()" title="Space">▶</button>
+        <span id="trim-info" style="margin-left:4px">  Load a video</span>
+        <span style="margin-left:auto;color:#3e3e52;font-size:7pt">Space·I·O·←→·⇧←→</span>
+      </div>
+      <div class="video-area" id="trim-area" onclick="trimTogglePlay()">
         <video id="trim-vid" preload="auto"></video>
         <canvas id="trim-overlay"></canvas>
+        <div class="play-overlay paused" id="trim-play-overlay">
+          <div class="play-icon" id="trim-play-icon">▶</div>
+        </div>
+        <div class="trim-progress" id="trim-progress-bar"></div>
       </div>
       <div class="scrubber-wrap"><canvas id="trim-scrub"></canvas></div>
       <div class="log-wrap">
@@ -532,6 +586,175 @@ button.export-btn:hover{filter:brightness(1.1)}
           <button class="flat" style="margin-left:auto" onclick="event.stopPropagation();document.getElementById('wm-log').innerHTML=''">clear</button>
         </div>
         <div class="log-body" id="wm-log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PIPELINE ═══════════════ -->
+<div class="tool-pane" id="pane-pipeline">
+  <header>
+    <span class="title pipe-title">PIPELINE</span>
+    <span class="sub">crop + trim + wm → 1 encode</span>
+    <span class="hdr-status" id="pipeline-status">Ready</span>
+  </header>
+  <div class="body">
+    <div class="panel">
+
+      <!-- Source video -->
+      <div class="card" style="border-left-color:var(--pipe)">
+        <div class="card-title" style="color:var(--pipe)">Source</div>
+        <div class="row"><label>Video</label>
+          <div class="upload-field" onclick="pipeUploader.open('video')">
+            <span class="uf-icon">🎬</span>
+            <span class="uf-name" id="pipe-video-name">Click to upload…</span>
+          </div>
+        </div>
+        <button class="last-result-btn" id="pipe-last-btn" onclick="pipeUseLastResult()">
+          <span>↩</span><span class="lr-name" id="pipe-last-name"></span>
+        </button>
+        <div class="row" style="margin-top:4px"><label>Output</label>
+          <input type="text" id="pipe-output" placeholder="Output filename…">
+        </div>
+        <div class="dl-banner" id="pipe-dl">
+          <span class="dl-name" id="pipe-dl-name"></span>
+          <a id="pipe-dl-link" href="#" download>⬇ Download</a>
+        </div>
+      </div>
+
+      <!-- Step 1: Trim -->
+      <div class="pipe-step" id="pipe-trim-step">
+        <div class="pipe-step-header" onclick="pipeToggleStep('trim')">
+          <input type="checkbox" id="pipe-trim-en" onclick="event.stopPropagation();pipeUpdateSummaries()"
+            onchange="pipeUpdateSummaries()">
+          <span class="step-label">✂ Trim</span>
+          <span class="step-summary" id="pipe-trim-summary">disabled</span>
+        </div>
+        <div class="pipe-step-body" id="pipe-trim-body">
+          <div class="hint" style="margin-bottom:6px">Set IN/OUT points below, then come back</div>
+          <div style="font-size:9pt">
+            <div class="row"><label>IN</label>
+              <input type="number" id="pipe-trim-in" min="0" step="0.1" value="0"
+                class="num-input" style="width:80px;flex:none"
+                oninput="pipeUpdateSummaries()"> <span class="val">s</span></div>
+            <div class="row"><label>OUT</label>
+              <input type="number" id="pipe-trim-out" min="0" step="0.1" value="0"
+                class="num-input" style="width:80px;flex:none"
+                oninput="pipeUpdateSummaries()"> <span class="val">s (0 = end)</span></div>
+          </div>
+          <button onclick="pipePullTrim()" style="width:100%;margin-top:6px;font-size:8pt">
+            ↓ Pull from Trim tool
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Crop -->
+      <div class="pipe-step" id="pipe-crop-step">
+        <div class="pipe-step-header" onclick="pipeToggleStep('crop')">
+          <input type="checkbox" id="pipe-crop-en" onclick="event.stopPropagation();pipeUpdateSummaries()"
+            onchange="pipeUpdateSummaries()">
+          <span class="step-label">⧉ Crop</span>
+          <span class="step-summary" id="pipe-crop-summary">disabled</span>
+        </div>
+        <div class="pipe-step-body" id="pipe-crop-body">
+          <div class="row"><label>Ratio</label>
+            <select id="pipe-crop-ratio" onchange="pipeUpdateSummaries()">
+              <option value="9:16">9:16 Shorts</option>
+              <option value="16:9">16:9 Video</option>
+              <option value="1:1">1:1 Square</option>
+              <option value="4:5">4:5 Portrait</option>
+              <option value="2:3">2:3 Portrait</option>
+              <option value="3:4">3:4 Portrait</option>
+            </select>
+          </div>
+          <div class="row"><label>X pos</label>
+            <input type="range" id="pipe-crop-x" min="0" max="100" value="50"
+              oninput="document.getElementById('pipe-crop-xv').textContent=this.value+'%';pipeUpdateSummaries()">
+            <span class="val" id="pipe-crop-xv">50%</span>
+          </div>
+          <div class="hint" style="margin-bottom:4px">Uses keyframes from Crop tool if available</div>
+          <button onclick="pipePullCrop()" style="width:100%;font-size:8pt">
+            ↓ Pull from Crop tool
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Watermark -->
+      <div class="pipe-step" id="pipe-wm-step">
+        <div class="pipe-step-header" onclick="pipeToggleStep('wm')">
+          <input type="checkbox" id="pipe-wm-en" onclick="event.stopPropagation();pipeUpdateSummaries()"
+            onchange="pipeUpdateSummaries()">
+          <span class="step-label">◈ Watermark</span>
+          <span class="step-summary" id="pipe-wm-summary">disabled</span>
+        </div>
+        <div class="pipe-step-body" id="pipe-wm-body">
+          <div class="hint" style="margin-bottom:6px">Uses watermarks configured in WM tool</div>
+          <div id="pipe-wm-slots-preview" style="font-size:8pt;color:var(--dim)">No WM slots configured</div>
+          <button onclick="pipePullWM()" style="width:100%;margin-top:6px;font-size:8pt">
+            ↓ Pull from WM tool
+          </button>
+        </div>
+      </div>
+
+      <!-- Output settings -->
+      <div class="card" style="border-left-color:var(--pipe)">
+        <div class="card-title" style="color:var(--pipe)">Output</div>
+        <div class="row"><label>CRF</label>
+          <input type="range" id="pipe-crf" min="0" max="51" value="18"
+            oninput="document.getElementById('pipe-crf-v').textContent=this.value">
+          <span class="val" id="pipe-crf-v">18</span></div>
+        <div class="hint" style="margin-bottom:4px">(18=HQ, 0=lossless)</div>
+        <div class="row"><label>Preset</label>
+          <select id="pipe-preset">
+            <option>fast</option><option>medium</option><option>slow</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="card" style="border-left-color:var(--pipe)">
+        <div class="card-title" style="color:var(--pipe)">Export</div>
+        <div class="progress-bar-wrap" id="pipe-prog-wrap" style="display:none">
+          <div class="progress-bar" id="pipe-prog" style="background:var(--pipe)"></div>
+        </div>
+        <div id="pipe-exp-status" class="hint" style="margin-bottom:6px"></div>
+        <button class="export-btn" id="pipe-export-btn" onclick="pipeExport()" disabled
+          style="--accent:var(--pipe);--accent2:#7dd3fc">
+          ⛓  Export Pipeline  ⛓
+        </button>
+        <div class="hint" style="text-align:center;margin-top:4px">
+          Single encode — no quality loss from chaining
+        </div>
+      </div>
+
+      <div class="log-wrap" style="border-radius:4px;overflow:hidden">
+        <div class="log-header" onclick="toggleLog('pipe-log')">[-] Log
+          <button class="flat" style="margin-left:auto"
+            onclick="event.stopPropagation();document.getElementById('pipe-log').innerHTML=''">clear</button>
+        </div>
+        <div class="log-body" id="pipe-log"></div>
+      </div>
+
+    </div><!-- /panel -->
+    <div class="right" style="background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px">
+      <div style="text-align:center;color:var(--dim);font-size:9pt">
+        <div style="font-size:2.5rem;margin-bottom:12px">⛓</div>
+        <div style="font-weight:700;color:var(--pipe);margin-bottom:8px;font-size:12pt;letter-spacing:2px">PIPELINE MODE</div>
+        <div style="color:var(--text);margin-bottom:4px">Single encode — no quality loss</div>
+        <div style="color:var(--dim);font-size:8pt">Trim → Crop → Watermark → 1 encode</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:16px 24px;font-size:8pt;color:var(--dim);max-width:320px;line-height:1.8">
+        <div style="color:var(--pipe);font-weight:700;margin-bottom:8px">HOW TO USE</div>
+        <div>1. Upload your source video above</div>
+        <div>2. It loads automatically in Crop, Trim &amp; WM</div>
+        <div>3. Configure each tool normally</div>
+        <div>4. Come back here and click <b style="color:var(--pipe)">↓ Pull from</b></div>
+        <div>5. Enable the steps you want</div>
+        <div>6. Click <b style="color:var(--pipe)">Export Pipeline</b></div>
+      </div>
+      <div style="font-size:8pt;color:#4ecb7166;text-align:center">
+        ✓ Zero quality loss from chaining<br>
+        ✓ Faster than running tools separately
       </div>
     </div>
   </div>
@@ -673,6 +896,9 @@ window.switchTool = (tool) => {
   window.dispatchEvent(new CustomEvent('toolswitched', {detail: tool}))
   requestAnimationFrame(() => {
     cropScrub.draw(); trimScrub.draw(); wmScrub.draw()
+    if (tool === 'pipeline') {
+      pipeAutoSync()
+    }
   })
 }
 
@@ -692,8 +918,8 @@ let lastResult = null  // { path, filename }
 function setLastResult(serverPath) {
   const filename = serverPath.split('/').pop()
   lastResult = { path: serverPath, filename }
-  // Show the button in trim and wm
-  for (const tool of ['trim', 'wm']) {
+  // Show the button in trim, wm, and pipeline
+  for (const tool of ['trim', 'wm', 'pipe']) {
     const btn  = document.getElementById(`${tool}-last-btn`)
     const name = document.getElementById(`${tool}-last-name`)
     if (btn && name) {
@@ -745,6 +971,7 @@ const cropLog     = new Logger(document.getElementById('crop-log'))
 
 const cropScrub = new Scrubber(document.getElementById('crop-scrub'), {
   onDrag: t => {
+    if (!cropVid.paused) cropVid.pause()
     cropVid.currentTime = t
     if (cropKfMode && cropKeyframes.length)
       cropSetXSilent(cropInterpKf(t))
@@ -760,7 +987,30 @@ cropVid.addEventListener('loadedmetadata', () => {
 cropVid.addEventListener('timeupdate', () => {
   cropScrub.setCurrent(cropVid.currentTime)
   cropDrawOverlay()
+  const pct = cropVid.duration ? (cropVid.currentTime / cropVid.duration * 100) : 0
+  document.getElementById('crop-progress-bar').style.width = pct + '%'
 })
+cropVid.addEventListener('play', () => {
+  const btn = document.getElementById('crop-play-btn')
+  const ov  = document.getElementById('crop-play-overlay')
+  const ic  = document.getElementById('crop-play-icon')
+  if (btn) { btn.textContent = '⏸'; btn.classList.add('playing') }
+  if (ov)  ov.classList.remove('paused')
+  if (ic)  ic.textContent = '⏸'
+})
+cropVid.addEventListener('pause', () => {
+  const btn = document.getElementById('crop-play-btn')
+  const ov  = document.getElementById('crop-play-overlay')
+  const ic  = document.getElementById('crop-play-icon')
+  if (btn) { btn.textContent = '▶'; btn.classList.remove('playing') }
+  if (ov)  ov.classList.add('paused')
+  if (ic)  ic.textContent = '▶'
+})
+
+window.cropTogglePlay = () => {
+  if (!cropVideoPath) return
+  if (cropVid.paused) cropVid.play(); else cropVid.pause()
+}
 
 window.cropUploader = new FileUploader({
   onVideo: result => {
@@ -1014,12 +1264,143 @@ const trimVid = document.getElementById('trim-vid')
 const trimLog = new Logger(document.getElementById('trim-log'))
 
 const trimScrub = new Scrubber(document.getElementById('trim-scrub'), {
-  onDrag: t => { trimVid.currentTime = t },
+  onDrag: t => {
+    if (!trimVid.paused) trimVid.pause()
+    trimVid.currentTime = t
+  },
   onSeek: t => { trimVid.currentTime = t }
 })
 
 trimVid.addEventListener('loadedmetadata', () => { trimScrub.setDuration(trimVid.duration) })
-trimVid.addEventListener('timeupdate', () => { trimScrub.setCurrent(trimVid.currentTime) })
+
+trimVid.addEventListener('timeupdate', () => {
+  trimScrub.setCurrent(trimVid.currentTime)
+  // Progress bar between IN and OUT
+  if (trimIn !== null && trimOut !== null && trimOut > trimIn) {
+    const pct = Math.max(0, Math.min(100,
+      (trimVid.currentTime - trimIn) / (trimOut - trimIn) * 100))
+    document.getElementById('trim-progress-bar').style.width = pct + '%'
+  } else {
+    const pct = trimVid.duration
+      ? (trimVid.currentTime / trimVid.duration * 100) : 0
+    document.getElementById('trim-progress-bar').style.width = pct + '%'
+  }
+  // Loop between IN/OUT if both are set and playing
+  if (!trimVid.paused && trimOut !== null && trimVid.currentTime >= trimOut) {
+    trimVid.currentTime = trimIn !== null ? trimIn : 0
+  }
+})
+
+trimVid.addEventListener('play', () => {
+  const btn     = document.getElementById('trim-play-btn')
+  const overlay = document.getElementById('trim-play-overlay')
+  const icon    = document.getElementById('trim-play-icon')
+  if (btn)     { btn.textContent = '⏸'; btn.classList.add('playing') }
+  if (overlay) overlay.classList.remove('paused')
+  if (icon)    icon.textContent = '⏸'
+})
+
+trimVid.addEventListener('pause', () => {
+  const btn     = document.getElementById('trim-play-btn')
+  const overlay = document.getElementById('trim-play-overlay')
+  const icon    = document.getElementById('trim-play-icon')
+  if (btn)     { btn.textContent = '▶'; btn.classList.remove('playing') }
+  if (overlay) overlay.classList.add('paused')
+  if (icon)    icon.textContent = '▶'
+})
+
+trimVid.addEventListener('ended', () => {
+  if (trimIn !== null) trimVid.currentTime = trimIn
+})
+
+window.trimTogglePlay = () => {
+  if (!trimVideoPath) return
+  if (trimVid.paused) {
+    // If at or past OUT, rewind to IN first
+    if (trimOut !== null && trimVid.currentTime >= trimOut)
+      trimVid.currentTime = trimIn !== null ? trimIn : 0
+    trimVid.play()
+  } else {
+    trimVid.pause()
+  }
+}
+
+// ── Global keyboard shortcuts (per active pane) ─────────────────────────
+document.addEventListener('keydown', e => {
+  // Never fire when typing in an input/select/textarea
+  if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return
+  // Allow button only for Space (play/pause)
+  if (document.activeElement.tagName === 'BUTTON' && e.code !== 'Space') return
+
+  const pane = document.querySelector('.tool-pane.active')?.id
+
+  // ── CROP shortcuts ────────────────────────────────────────────────────
+  if (pane === 'pane-crop') {
+    switch (e.code) {
+      case 'Space':
+        e.preventDefault()
+        cropTogglePlay()
+        break
+      case 'KeyK':
+        e.preventDefault()
+        if (!cropKfMode) {
+          cropToggleKf()          // enable keyframes
+        }
+        cropAddKf()               // add KF at current time
+        break
+      case 'ArrowLeft':
+        e.preventDefault()
+        cropVid.currentTime = Math.max(0, cropVid.currentTime - (e.shiftKey ? 5 : 1))
+        break
+      case 'ArrowRight':
+        e.preventDefault()
+        cropVid.currentTime = Math.min(cropVid.duration || 0, cropVid.currentTime + (e.shiftKey ? 5 : 1))
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        cropVid.currentTime = Math.min(cropVid.duration || 0, cropVid.currentTime + (e.shiftKey ? 5 : 1))
+        break
+      case 'ArrowDown':
+        e.preventDefault()
+        cropVid.currentTime = Math.max(0, cropVid.currentTime - (e.shiftKey ? 5 : 1))
+        break
+    }
+  }
+
+  // ── TRIM shortcuts ────────────────────────────────────────────────────
+  if (pane === 'pane-trim') {
+    switch (e.code) {
+      case 'Space':
+        e.preventDefault()
+        trimTogglePlay()
+        break
+      case 'KeyI':
+        e.preventDefault()
+        trimSetIn()
+        break
+      case 'KeyO':
+        e.preventDefault()
+        trimSetOut()
+        break
+      case 'ArrowLeft':
+        e.preventDefault()
+        trimStepBy(e.shiftKey ? -5 : -1)
+        break
+      case 'ArrowRight':
+        e.preventDefault()
+        trimStepBy(e.shiftKey ? 5 : 1)
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        trimStepBy(e.shiftKey ? 5 : 1)
+        break
+      case 'ArrowDown':
+        e.preventDefault()
+        trimStepBy(e.shiftKey ? -5 : -1)
+        break
+    }
+  }
+})
 
 window.trimUploader = new FileUploader({
   onVideo: result => {
@@ -1435,6 +1816,279 @@ window.wmExport = async () => {
 
 // Start with one slot open by default
 wmAddSlot()
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// PIPELINE TOOL
+// ══════════════════════════════════════════════════════════════════════════
+let pipeVideoPath = '', pipeVideoFilename = ''
+let pipeCropKeyframes = []   // pulled from crop tool
+let pipeWMLayers = []        // pulled from wm tool
+
+const pipeLog = new Logger(document.getElementById('pipe-log'))
+
+function pipeLoadVideo(result) {
+  pipeVideoPath     = result.path
+  pipeVideoFilename = result.filename
+  const fname = result.filename
+
+  // Update pipeline UI
+  document.getElementById('pipe-video-name').textContent = fname
+  document.getElementById('pipe-video-name').classList.add('loaded')
+  document.getElementById('pipe-output').value = fname.replace(/\.[^/.]+$/, '') + '_pipeline.mp4'
+  document.getElementById('pipe-export-btn').disabled = false
+  pipeLog.append(`Loaded: ${fname}`, 'ok')
+
+  // Propagate to Crop tool
+  const cropNameEl = document.getElementById('crop-video-name')
+  if (cropNameEl) {
+    cropNameEl.textContent = fname
+    cropNameEl.classList.add('loaded')
+    cropLoadVideo(result.path, fname)
+  }
+
+  // Propagate to Trim tool
+  const trimNameEl = document.getElementById('trim-video-name')
+  if (trimNameEl) {
+    trimNameEl.textContent = fname
+    trimNameEl.classList.add('loaded')
+    trimLoadVideo(result.path, fname)
+  }
+
+  // Propagate to WM tool
+  const wmNameEl = document.getElementById('wm-video-name')
+  if (wmNameEl) {
+    wmNameEl.textContent = fname
+    wmNameEl.classList.add('loaded')
+    wmLoadVideo(result.path, fname)
+  }
+
+  pipeLog.append('Video propagated to Crop, Trim and WM tools', 'ok')
+}
+
+window.pipeUploader = new FileUploader({
+  onVideo: result => pipeLoadVideo(result)
+})
+
+window.pipeUseLastResult = () => {
+  if (!lastResult) return
+  pipeLoadVideo({ path: lastResult.path, filename: lastResult.filename })
+}
+
+window.pipeToggleStep = (step) => {
+  const body = document.getElementById(`pipe-${step}-body`)
+  if (body) body.classList.toggle('open')
+}
+
+window.pipeAutoSync = () => {
+  let synced = []
+
+  // Sync source video from whichever tool has one loaded
+  if (!pipeVideoPath) {
+    const anyPath     = cropVideoPath || trimVideoPath || wmVideoPath
+    const anyFilename = (cropVideoPath && document.getElementById('crop-video-name').textContent)
+                     || (trimVideoPath && document.getElementById('trim-video-name').textContent)
+                     || (wmVideoPath   && document.getElementById('wm-video-name').textContent)
+                     || ''
+    if (anyPath) {
+      pipeVideoPath     = anyPath
+      pipeVideoFilename = anyFilename
+      document.getElementById('pipe-video-name').textContent = anyFilename
+      document.getElementById('pipe-video-name').classList.add('loaded')
+      document.getElementById('pipe-output').value =
+        anyFilename.replace(/\.[^/.]+$/, '') + '_pipeline.mp4'
+      document.getElementById('pipe-export-btn').disabled = false
+      synced.push('video')
+    }
+  }
+
+  // Auto-pull Trim if IN or OUT are set
+  if (typeof trimIn !== 'undefined' && (trimIn !== null || trimOut !== null)) {
+    document.getElementById('pipe-trim-in').value  = trimIn  !== null ? trimIn.toFixed(2)  : 0
+    document.getElementById('pipe-trim-out').value = trimOut !== null ? trimOut.toFixed(2) : 0
+    const hasTrim = trimIn !== null || trimOut !== null
+    document.getElementById('pipe-trim-en').checked = hasTrim
+    if (hasTrim) synced.push('trim')
+  }
+
+  // Auto-pull Crop if a video is loaded in crop tool
+  if (typeof cropInfo !== 'undefined' && cropInfo) {
+    const ratio = document.getElementById('crop-ratio').value
+    const x     = Math.round(cropX * 100)
+    document.getElementById('pipe-crop-ratio').value    = ratio
+    document.getElementById('pipe-crop-x').value        = x
+    document.getElementById('pipe-crop-xv').textContent = x + '%'
+    pipeCropKeyframes = cropKfMode ? [...cropKeyframes] : []
+    document.getElementById('pipe-crop-en').checked = true
+    synced.push('crop')
+  }
+
+  // Auto-pull WM if any slot has an image
+  const activeWM = wmSlots.filter(s => s.wmPath)
+  if (activeWM.length) {
+    pipeWMLayers = activeWM.map(s => ({...s}))
+    const preview = document.getElementById('pipe-wm-slots-preview')
+    preview.innerHTML = pipeWMLayers.map((s, i) =>
+      `<div style="padding:2px 0">WM ${i+1}: ${s.filename} — ${s.position}</div>`
+    ).join('')
+    document.getElementById('pipe-wm-en').checked = true
+    synced.push(`wm (${activeWM.length})`)
+  }
+
+  pipeUpdateSummaries()
+
+  if (synced.length)
+    pipeLog.append(`Auto-synced: ${synced.join(', ')}`, 'ok')
+}
+
+window.pipeUpdateSummaries = () => {
+  // Trim
+  const trimEn  = document.getElementById('pipe-trim-en').checked
+  const trimIn  = parseFloat(document.getElementById('pipe-trim-in').value) || 0
+  const trimOut = parseFloat(document.getElementById('pipe-trim-out').value) || 0
+  document.getElementById('pipe-trim-summary').textContent =
+    trimEn ? (trimOut > trimIn ? `${trimIn}s → ${trimOut}s` : `from ${trimIn}s`) : 'disabled'
+
+  // Crop
+  const cropEn    = document.getElementById('pipe-crop-en').checked
+  const cropRatio = document.getElementById('pipe-crop-ratio').value
+  const cropX     = document.getElementById('pipe-crop-x').value
+  document.getElementById('pipe-crop-summary').textContent =
+    cropEn ? `${cropRatio} @ ${cropX}%` : 'disabled'
+
+  // WM
+  const wmEn = document.getElementById('pipe-wm-en').checked
+  const activeWM = pipeWMLayers.filter(l => l.wmPath)
+  document.getElementById('pipe-wm-summary').textContent =
+    wmEn ? (activeWM.length ? `${activeWM.length} layer(s)` : 'no layers') : 'disabled'
+}
+
+// Pull settings from individual tools into pipeline
+window.pipePullTrim = () => {
+  if (typeof trimIn !== 'undefined' && trimIn !== null) {
+    document.getElementById('pipe-trim-in').value  = trimIn?.toFixed(2) ?? 0
+    document.getElementById('pipe-trim-out').value = trimOut?.toFixed(2) ?? 0
+    document.getElementById('pipe-trim-en').checked = true
+    pipeUpdateSummaries()
+    pipeLog.append('Pulled trim settings', 'ok')
+  } else {
+    pipeLog.append('No trim points set in Trim tool', 'warn')
+  }
+}
+
+window.pipePullCrop = () => {
+  if (typeof cropInfo !== 'undefined' && cropInfo) {
+    const ratio = document.getElementById('crop-ratio').value
+    const x     = Math.round(cropX * 100)
+    document.getElementById('pipe-crop-ratio').value = ratio
+    document.getElementById('pipe-crop-x').value     = x
+    document.getElementById('pipe-crop-xv').textContent = x + '%'
+    pipeCropKeyframes = cropKfMode ? [...cropKeyframes] : []
+    document.getElementById('pipe-crop-en').checked = true
+    pipeUpdateSummaries()
+    pipeLog.append(`Pulled crop: ${ratio} @ ${x}%${pipeCropKeyframes.length ? ` + ${pipeCropKeyframes.length} keyframes` : ''}`, 'ok')
+  } else {
+    pipeLog.append('No video loaded in Crop tool', 'warn')
+  }
+}
+
+window.pipePullWM = () => {
+  const active = wmSlots.filter(s => s.wmPath)
+  if (active.length) {
+    pipeWMLayers = active.map(s => ({...s}))
+    const preview = document.getElementById('pipe-wm-slots-preview')
+    preview.innerHTML = pipeWMLayers.map((s,i) =>
+      `<div style="padding:2px 0">WM ${i+1}: ${s.filename} — ${s.position}</div>`
+    ).join('')
+    document.getElementById('pipe-wm-en').checked = true
+    pipeUpdateSummaries()
+    pipeLog.append(`Pulled ${active.length} WM layer(s)`, 'ok')
+  } else {
+    pipeLog.append('No watermarks configured in WM tool', 'warn')
+  }
+}
+
+window.pipeExport = async () => {
+  if (!pipeVideoPath) return
+  const outputName = document.getElementById('pipe-output').value
+  if (!outputName) { pipeLog.append('Set output filename', 'warn'); return }
+  const output = `${cfg.outputDir}/${outputName}`
+
+  const trimEn  = document.getElementById('pipe-trim-en').checked
+  const trimIn_ = parseFloat(document.getElementById('pipe-trim-in').value) || 0
+  const trimOut_= parseFloat(document.getElementById('pipe-trim-out').value) || 0
+  const cropEn  = document.getElementById('pipe-crop-en').checked
+  const wmEn    = document.getElementById('pipe-wm-en').checked
+
+  const payload = {
+    video_path:  pipeVideoPath,
+    output_path: output,
+    trim: {
+      enabled:  trimEn,
+      mark_in:  trimIn_,
+      mark_out: trimOut_,
+    },
+    crop: {
+      enabled:       cropEn,
+      ratio:         document.getElementById('pipe-crop-ratio').value,
+      static_crop_x: parseFloat(document.getElementById('pipe-crop-x').value) / 100,
+      keyframes:     pipeCropKeyframes.map(k => ({ time: k.time, crop_x: k.crop_x })),
+    },
+    wm_layers: wmEn ? pipeWMLayers.map(s => ({
+      wm_path:        s.wmPath,
+      position:       s.position,
+      scale_pct:      s.scalePct,
+      opacity:        s.opacity / 100,
+      padding:        s.padding,
+      animation:      s.animation,
+      anim_speed:     s.animSpeed,
+      anim_amplitude: s.animAmplitude,
+    })) : [],
+    crf:    parseInt(document.getElementById('pipe-crf').value),
+    preset: document.getElementById('pipe-preset').value,
+  }
+
+  document.getElementById('pipe-export-btn').disabled = true
+  document.getElementById('pipe-prog-wrap').style.display = 'block'
+  document.getElementById('pipe-prog').style.width = '0%'
+  document.getElementById('pipe-dl').classList.remove('visible')
+
+  try {
+    const res = await fetch(`${API()}/pipeline/export`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    }).then(r => r.json())
+
+    pipeLog.append(`Job ${res.job_id} started`, 'ok')
+    watchJob('pipeline', res.job_id, {
+      onProgress: (p, s) => {
+        document.getElementById('pipe-prog').style.width = `${p}%`
+        document.getElementById('pipe-exp-status').textContent = s === 'running' ? `${p}%` : s
+      },
+      onDone: () => {
+        pipeLog.append('✓ Pipeline done!', 'ok')
+        document.getElementById('pipe-export-btn').disabled = false
+        showDownload('pipe-dl', 'pipe-dl-link', 'pipe-dl-name', output)
+      },
+      onError: e => {
+        pipeLog.append(`Error: ${e}`, 'err')
+        document.getElementById('pipe-export-btn').disabled = false
+      },
+    })
+  } catch(e) {
+    pipeLog.append(`Error: ${e}`, 'err')
+    document.getElementById('pipe-export-btn').disabled = false
+  }
+}
+
+// Wire last-result button for pipeline
+;(function() {
+  const origSetLastResult = setLastResult
+  // Already hooked into showDownload via setLastResult — just also show pipe button
+  const _orig = window.setLastResult || function(){}
+})()
+
 </script>
 </body>
 </html>
