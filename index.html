@@ -7,41 +7,64 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 :root {
-  --bg:#0f0f12; --surface:#1a1a22; --surface2:#22222e;
-  --border:#2e2e3e; --text:#e8e6f0; --dim:#7a7890;
-  --success:#4ecb71; --warning:#f7a35c; --danger:#f76c6c;
-  --crop:#f7a35c;   /* orange */
-  --trim:#4ecb71;   /* green  */
-  --wm:#a78bfa;     /* purple */
-  --pipe:#38bdf8;   /* cyan */
+  --bg:#0a0a0a;
+  --surface:#111;
+  --surface2:#161616;
+  --surface3:#1a1a1a;
+  --border:#222;
+  --border2:#2a2a2a;
+  --text:#e8e8e8;
+  --dim:#555;
+  --dim2:#333;
+  --success:#4caf7d;
+  --warning:#e8954a;
+  --danger:#c9453a;
+  --crop:#e8954a;
+  --trim:#4caf7d;
+  --wm:#8b7cf8;
+  --pipe:#3fa8d4;
+  --radius:0px;
+  --radius-lg:0px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;
-     font-size:10pt;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:9.5pt;height:100vh;display:flex;flex-direction:column;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
 
 /* ── Sidebar nav ── */
 .sidebar{
-  width:64px;background:#0a0a0d;border-right:1px solid var(--border);
-  display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;
+  width:66px;
+  background:var(--bg);
+  border-right:1px solid var(--border2);
+  display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;
   flex-shrink:0;
 }
-.nav-logo{color:var(--text);font-weight:700;font-size:9pt;letter-spacing:1px;
-          margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);
-          width:100%;text-align:center}
-.nav-btn{
-  width:48px;height:48px;border-radius:6px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:2px;cursor:pointer;border:none;background:transparent;
-  color:var(--dim);font-family:inherit;font-size:7pt;
-  transition:all .15s;
+.nav-logo{
+  color:var(--text);font-weight:700;font-size:8.5pt;letter-spacing:2px;
+  margin-bottom:10px;padding-bottom:10px;
+  border-bottom:1px solid var(--border);
+  width:100%;text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text);
 }
-.nav-btn:hover{background:var(--surface);color:var(--text)}
-.nav-btn.active{background:var(--surface);border-left:3px solid var(--active-color,var(--crop))}
-.nav-btn .icon{font-size:16pt;line-height:1}
-.nav-btn[data-tool=crop]{--active-color:var(--crop)}
-.nav-btn[data-tool=trim]{--active-color:var(--trim)}
-.nav-btn[data-tool=wm]      {--active-color:var(--wm)}
-.nav-btn[data-tool=pipeline]{--active-color:var(--pipe)}
+.nav-btn{
+  width:50px;height:50px;border-radius:var(--radius-lg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;border:none;background:transparent;
+  color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:6.5pt;
+  transition:all .18s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.nav-btn:hover{background:var(--surface2);color:var(--text)}
+.nav-btn.active{background:var(--surface2);color:var(--text);border-left:2px solid var(--active-color,var(--crop))}
+.nav-btn .icon{font-size:14pt;line-height:1}
+.nav-btn[data-tool=crop]    {--active-color:var(--crop);--active-glow:var(--crop-glow)}
+.nav-btn[data-tool=trim]    {--active-color:var(--trim);--active-glow:var(--trim-glow)}
+.nav-btn[data-tool=wm]      {--active-color:var(--wm);  --active-glow:var(--wm-glow)}
+.nav-btn[data-tool=pipeline]{--active-color:var(--pipe); --active-glow:var(--pipe-glow)}
 
 /* ── Layout ── */
 .layout{display:flex;flex:1;overflow:hidden}
@@ -50,55 +73,62 @@ body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospa
 
 /* ── Shared components ── */
 header{
-  display:flex;align-items:center;gap:12px;padding:10px 24px;
+  display:flex;align-items:center;gap:12px;padding:10px 20px;
   background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;
 }
-.title{font-weight:700;font-size:13pt;letter-spacing:1px}
+.title{font-weight:700;font-size:10.5pt;letter-spacing:2px}
 .crop-title{color:var(--crop)} .trim-title{color:var(--trim)} .wm-title{color:var(--wm)}
 .sub{color:var(--dim);font-size:9pt}
-.hdr-status{margin-left:auto;color:var(--dim);font-size:9pt}
+.hdr-status{margin-left:auto;color:var(--dim);font-size:8pt;font-weight:400}
 .hdr-status.ok{color:var(--success)} .hdr-status.err{color:var(--danger)}
 
 .body{display:flex;flex:1;overflow:hidden}
-.panel{width:300px;flex-shrink:0;background:var(--bg);overflow-y:auto;padding:8px;
-       display:flex;flex-direction:column;gap:6px}
-.panel::-webkit-scrollbar{width:4px}
-.panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.panel{width:296px;flex-shrink:0;background:var(--bg);overflow-y:auto;padding:8px 8px 16px;
+       display:flex;flex-direction:column;gap:4px}
+.panel::-webkit-scrollbar{width:3px}
+.panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+.panel::-webkit-scrollbar-track{background:transparent}
 
-.card{background:var(--surface);border:1px solid var(--border);
-      border-radius:4px;padding:8px;border-left:3px solid var(--border);
-      transition:border-left-color .15s}
-.card-title{font-size:9pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-            margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.card{background:var(--surface);border:1px solid var(--border);padding:10px;border-left:2px solid var(--border);transition:border-left-color .15s}
+.card-title{font-size:7.5pt;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+            margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border);color:var(--dim)}
 .crop-card:hover{border-left-color:var(--crop)} .crop-card .card-title{color:var(--crop)}
 .trim-card:hover{border-left-color:var(--trim)} .trim-card .card-title{color:var(--trim)}
 .wm-card:hover  {border-left-color:var(--wm)}   .wm-card   .card-title{color:var(--wm)}
 
-input[type=text],select{background:var(--surface2);color:var(--text);border:1px solid var(--border);
-  border-radius:3px;padding:4px 8px;font-family:inherit;font-size:9pt;width:100%;outline:none}
+input[type=text],select{
+  background:var(--surface2);color:var(--text);border:1px solid var(--border);
+  border-radius:0;padding:5px 9px;font-family:'JetBrains Mono',monospace;font-size:9pt;width:100%;
+  outline:none;transition:border-color .1s;
+}
 input[type=text]:focus,select:focus{border-color:var(--warning)}
-button{background:var(--surface2);color:var(--text);border:1px solid #3a3a50;
-  border-radius:4px;padding:5px 12px;font-family:inherit;font-size:9pt;cursor:pointer;
-  transition:background .1s,border-color .1s}
-button:hover{background:var(--warning);border-color:var(--warning);color:var(--bg)}
-button:disabled{background:#161620;color:#3a3a50;border-color:#252535;cursor:default}
+button{
+  background:var(--surface2);color:var(--text);border:1px solid var(--border2);
+  border-radius:0;padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:8.5pt;
+  font-weight:400;cursor:pointer;transition:background .1s,color .1s,border-color .1s;
+}
+button:hover{background:var(--warning);border-color:var(--warning);color:#000}
+button:disabled{background:var(--surface);color:var(--dim2);border-color:var(--border);cursor:default}
 button.flat{background:transparent;color:var(--dim);border:none;padding:2px 8px}
-button.flat:hover{color:var(--warning);background:var(--surface2)}
+button.flat:hover{color:var(--warning);background:transparent}
 button.danger{background:var(--danger);color:#fff;border:none}
 button.success{background:var(--success);color:#000;border:none;font-weight:700}
 
 .row{display:flex;gap:6px;align-items:center;margin-bottom:4px}
-.row label{color:var(--dim);min-width:48px;font-size:9pt}
+.row label{color:var(--dim);min-width:48px;font-size:8.5pt}
 .row input[type=range]{flex:1;accent-color:var(--warning)}
-.row .val{color:#f9c08a;min-width:24px;text-align:right;font-size:9pt;flex-shrink:0}
-.hint{color:var(--dim);font-size:8pt;margin-top:2px}
+.row .val{color:var(--dim);min-width:24px;text-align:right;font-size:8.5pt;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.hint{color:var(--dim);font-size:8pt;margin-top:2px;line-height:1.5}
 .preset-row{display:flex;gap:4px;margin-bottom:4px}
 .preset-row button{flex:1;font-size:8pt;padding:4px}
 
 .right{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.preview-header{background:var(--surface);border-bottom:1px solid var(--border);
-  padding:6px 14px;display:flex;align-items:center;gap:10px;
-  font-size:9pt;font-weight:700;letter-spacing:1px;flex-shrink:0}
+.preview-header{
+  background:var(--bg);border-bottom:1px solid var(--border);
+  padding:6px 12px;display:flex;align-items:center;gap:10px;
+  font-size:8pt;font-weight:700;letter-spacing:2px;flex-shrink:0;
+  text-transform:uppercase;
+}
 .video-area{flex:1;position:relative;background:#000;overflow:hidden;cursor:ew-resize}
 .video-area video{width:100%;height:100%;object-fit:contain;pointer-events:none}
 .play-overlay{position:absolute;inset:0;display:flex;align-items:center;
@@ -113,37 +143,39 @@ button.success{background:var(--success);color:#000;border:none;font-weight:700}
 .play-overlay:hover .play-icon{opacity:1}
 .play-overlay.paused .play-icon{opacity:.85}
 .play-overlay.paused:hover .play-icon{opacity:1;transform:scale(1.08)}
-.play-btn{background:transparent;border:1px solid #3a3a50;border-radius:4px;
-  color:var(--dim);padding:2px 10px;font-size:11pt;line-height:1;cursor:pointer;
-  transition:color .1s,border-color .1s}
-.play-btn:hover{color:var(--trim);border-color:var(--trim);background:transparent}
+.play-btn{
+  background:transparent;border:1px solid var(--border2);border-radius:0;
+  color:var(--dim);padding:2px 8px;font-size:10pt;line-height:1;cursor:pointer;
+  transition:color .1s,border-color .1s;
+}
+.play-btn:hover{color:var(--trim);border-color:var(--trim)}
 .play-btn.playing{color:var(--trim);border-color:var(--trim)}
 .trim-progress{height:3px;background:var(--trim);position:absolute;bottom:0;left:0;
   width:0%;transition:none;pointer-events:none;z-index:3}
 .video-area canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 
-.scrubber-wrap{background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;width:100%}
+.scrubber-wrap{background:var(--bg);border-top:1px solid var(--border);flex-shrink:0;width:100%}
 .scrubber-wrap canvas{display:block;width:100%;height:52px}
 .kf-timeline-wrap{background:var(--surface);border-top:1px solid var(--border);display:none}
 .kf-timeline-wrap.visible{display:block}
-.log-wrap{background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
+.log-wrap{background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
 .log-header{display:flex;align-items:center;padding:4px 10px;cursor:pointer;
-  user-select:none;color:var(--dim);font-size:9pt;gap:8px}
-.log-body{height:90px;overflow-y:auto;padding:4px 10px;font-size:8pt;
-  color:var(--dim);line-height:1.5}
+  user-select:none;color:var(--dim);font-size:8pt;gap:8px}
+.log-body{height:80px;overflow-y:auto;padding:4px 10px;font-size:7.5pt;
+  color:var(--dim);line-height:1.5;font-family:'JetBrains Mono',monospace}
 .log-body .ok{color:var(--success)} .log-body .err{color:var(--danger)}
 .log-body .warn{color:var(--warning)}
 
 .progress-bar-wrap{height:6px;background:var(--surface2);border-radius:3px;
   overflow:hidden;margin-top:4px}
-.progress-bar{height:100%;background:var(--warning);border-radius:3px;transition:width .3s;width:0}
+.progress-bar{height:100%;background:var(--warning);border-radius:0;transition:width .3s;width:0}
 
 /* accent export buttons */
 button.export-btn{
-  background:var(--accent,var(--warning));color:#000;
-  border:3px solid var(--accent2,#f9c08a);font-weight:700;
-  font-size:12pt;padding:10px 24px;letter-spacing:2px;
-  border-radius:8px;width:100%;margin-top:4px
+  background:var(--accent,var(--warning));color:#000;border:none;
+  font-weight:700;font-size:10.5pt;padding:11px 24px;letter-spacing:3px;
+  border-radius:0;width:100%;margin-top:6px;
+  transition:filter .1s;
 }
 button.export-btn:hover{filter:brightness(1.1)}
 .crop-export{--accent:var(--crop);--accent2:#f9c08a}
@@ -153,8 +185,9 @@ button.export-btn:hover{filter:brightness(1.1)}
 /* ── Download banner ── */
 .dl-banner{
   display:none;align-items:center;gap:10px;
-  background:#1a2a1a;border:1px solid var(--success);
-  border-radius:6px;padding:8px 12px;margin-top:6px;
+  background:transparent;border:1px solid var(--border2);
+  border-left:2px solid var(--trim);
+  border-radius:0;padding:7px 10px;margin-top:6px;
 }
 .dl-banner.visible{display:flex}
 .dl-banner a{color:var(--success);font-weight:700;font-size:9pt;text-decoration:none}
@@ -162,12 +195,34 @@ button.export-btn:hover{filter:brightness(1.1)}
 .dl-banner .dl-name{color:var(--dim);font-size:8pt;flex:1;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* shortcuts modal */
+.shortcuts-modal{max-width:520px;width:94%}
+.shortcuts-modal .modal-header{padding:14px 20px}
+.shortcuts-modal .modal-header .title{font-size:11pt;color:var(--text)}
+.shortcuts-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;overflow-y:auto;max-height:60vh}
+.shortcut-section{padding:14px 20px;border-bottom:1px solid var(--border)}
+.shortcut-section:nth-child(odd){border-right:1px solid var(--border)}
+.shortcut-section h4{font-size:8pt;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:10px}
+.shortcut-section h4.crop-h{color:var(--crop)}
+.shortcut-section h4.trim-h{color:var(--trim)}
+.shortcut-section h4.global-h{color:var(--dim)}
+.shortcut-row{display:flex;align-items:center;gap:8px;
+  margin-bottom:6px;font-size:8.5pt}
+.shortcut-row .desc{color:var(--dim);flex:1}
+.kbd{display:inline-flex;align-items:center;justify-content:center;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:0;padding:1px 6px;font-size:7.5pt;color:var(--text);
+  font-family:'JetBrains Mono',monospace;white-space:nowrap;flex-shrink:0;min-width:22px}
+
 /* modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
   z-index:100;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:6px;
-  width:600px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden}
+.modal{
+  background:var(--surface);border:1px solid var(--border2);border-radius:0;
+  width:600px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;
+}
 .modal-header{padding:12px 16px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:8px}
 .modal-header .path{flex:1;color:#f9c08a;font-size:9pt;
@@ -183,7 +238,7 @@ button.export-btn:hover{filter:brightness(1.1)}
 /* WM grid positions */
 .pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:4px 0}
 .pos-btn{height:32px;font-size:8pt;padding:2px}
-.pos-btn.sel{background:var(--wm);color:#fff;border-color:var(--wm)}
+.pos-btn.sel{background:var(--wm);color:#000;border-color:var(--wm)}
 
 /* Pipeline pane */
 .pipe-step{background:var(--surface);border:1px solid var(--border);
@@ -196,7 +251,7 @@ button.export-btn:hover{filter:brightness(1.1)}
   letter-spacing:1px;text-transform:uppercase}
 .pipe-step-header .step-summary{font-size:8pt;color:var(--dim);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
-.pipe-step-body{padding:8px;display:none;border-top:1px solid var(--border)}
+.pipe-step-body{padding:8px;display:none;border-top:1px solid var(--border2)}
 .pipe-step-body.open{display:block}
 .pipe-title{color:var(--pipe)}
 .pipe-step-header .step-label{color:var(--pipe)}
@@ -222,7 +277,7 @@ button.export-btn:hover{filter:brightness(1.1)}
   border-radius:4px;margin-bottom:6px;overflow:hidden;border-left:3px solid var(--wm)}
 .wm-slot-header{display:flex;align-items:center;gap:8px;padding:6px 8px;
   cursor:pointer;user-select:none;background:var(--surface2)}
-.wm-slot-header:hover{background:#2a2a38}
+.wm-slot-header:hover{background:var(--surface3)}
 .wm-slot-header .slot-label{flex:1;font-size:9pt;font-weight:700;color:var(--wm)}
 .wm-slot-header .slot-status{font-size:8pt;color:var(--dim);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px}
@@ -232,25 +287,26 @@ button.export-btn:hover{filter:brightness(1.1)}
 .wm-slot-body{padding:8px;display:none}
 .wm-slot-body.open{display:block}
 .slot-pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:4px 0}
-.slot-pos-btn{height:28px;font-size:8pt;padding:2px;background:var(--surface2);
-  color:var(--dim);border:1px solid var(--border);border-radius:3px;cursor:pointer}
-.slot-pos-btn:hover{background:var(--wm);color:#fff;border-color:var(--wm)}
-.slot-pos-btn.sel{background:var(--wm);color:#fff;border-color:var(--wm)}
-.num-input{width:46px!important;flex:none!important;padding:3px 4px;text-align:right;
+.slot-pos-btn{height:28px;font-size:9pt;padding:2px;background:var(--surface2);
+  color:var(--dim);border:1px solid var(--border);border-radius:0;cursor:pointer;transition:all .1s}
+.slot-pos-btn:hover{background:var(--surface3);color:var(--text);border-color:var(--border2)}
+.slot-pos-btn.sel{background:var(--wm);color:#000;border-color:var(--wm)}
+.num-input{width:46px!important;flex:none!important;padding:3px 5px;text-align:right;
   background:var(--surface2);color:var(--text);border:1px solid var(--border);
-  border-radius:3px;font-family:inherit;font-size:9pt}
+  border-radius:0;font-family:'JetBrains Mono',monospace;font-size:8.5pt}
 .num-input:focus{border-color:var(--warning);outline:none}
 
 /* last result button */
 .last-result-btn{
   display:none;align-items:center;gap:6px;
-  background:#1a2218;border:1px solid #4ecb7166;
-  border-radius:3px;padding:3px 8px;cursor:pointer;
-  color:#4ecb71;font-size:8pt;font-family:inherit;
-  transition:background .15s,border-color .15s;
+  background:transparent;border:1px solid var(--border2);
+  border-left:2px solid var(--trim);
+  border-radius:0;padding:4px 9px;cursor:pointer;
+  color:var(--trim);font-size:8pt;font-family:'JetBrains Mono',monospace;
+  transition:border-color .1s,color .1s;
   width:100%;margin-top:4px;text-align:left;
 }
-.last-result-btn:hover{background:#1f2e1c;border-color:#4ecb71;color:#fff}
+.last-result-btn:hover{border-color:var(--trim);color:var(--text)}
 .last-result-btn.visible{display:flex;margin-bottom:4px}
 .last-result-btn .lr-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -258,8 +314,8 @@ button.export-btn:hover{filter:brightness(1.1)}
 .upload-field{
   display:flex;align-items:center;gap:6px;
   background:var(--surface2);border:1px solid var(--border);
-  border-radius:3px;padding:4px 8px;cursor:pointer;
-  transition:border-color .15s;flex:1;min-width:0;
+  border-radius:0;padding:5px 9px;cursor:pointer;
+  transition:border-color .1s;flex:1;min-width:0;
 }
 .upload-field:hover{border-color:var(--warning)}
 .upload-field .uf-name{flex:1;font-size:9pt;color:var(--dim);
@@ -288,6 +344,9 @@ button.export-btn:hover{filter:brightness(1.1)}
   </button>
   <button class="nav-btn" data-tool="settings" onclick="switchTool('settings')" title="Settings" style="margin-top:auto">
     <span class="icon">⚙</span>cfg
+  </button>
+  <button class="nav-btn" onclick="document.getElementById('shortcuts-modal').classList.toggle('open')" title="Keyboard shortcuts (?)">
+    <span class="icon" style="font-size:14pt">⌨</span><span style="font-size:6pt">?</span>
   </button>
 </div>
 
@@ -574,11 +633,21 @@ button.export-btn:hover{filter:brightness(1.1)}
     <div class="right">
       <div class="preview-header" style="color:var(--wm)">
         PREVIEW
-        <button class="flat" onclick="wmRefreshPreview()" style="color:var(--wm);font-size:8pt">↻ Refresh</button>
-        <span id="wm-info">  Load a video</span>
+        <button class="play-btn" id="wm-play-btn" onclick="wmTogglePlay()" title="Space">▶</button>
+        <span id="wm-info" style="margin-left:4px">  Load a video</span>
+        <span style="margin-left:auto;color:#3e3e52;font-size:7pt">Space·←→·⇧←→</span>
       </div>
-      <div class="video-area" id="wm-area" style="cursor:default">
-        <img id="wm-preview-img" style="width:100%;height:100%;object-fit:contain">
+      <div class="video-area" id="wm-area" style="cursor:pointer" onclick="wmTogglePlay()">
+        <!-- Hidden video element drives the canvas -->
+        <video id="wm-vid" preload="auto" playsinline
+          style="position:absolute;width:100%;height:100%;opacity:0;pointer-events:none;left:0;top:0"></video>
+        <!-- Canvas shows composite: video + watermarks -->
+        <canvas id="wm-canvas"
+          style="width:100%;height:100%;object-fit:contain;display:block"></canvas>
+        <div class="play-overlay paused" id="wm-play-overlay">
+          <div class="play-icon" id="wm-play-icon">▶</div>
+        </div>
+        <div class="trim-progress" id="wm-progress-bar" style="background:var(--wm)"></div>
       </div>
       <div class="scrubber-wrap"><canvas id="wm-scrub"></canvas></div>
       <div class="log-wrap">
@@ -651,14 +720,14 @@ button.export-btn:hover{filter:brightness(1.1)}
       <!-- Step 2: Crop -->
       <div class="pipe-step" id="pipe-crop-step">
         <div class="pipe-step-header" onclick="pipeToggleStep('crop')">
-          <input type="checkbox" id="pipe-crop-en" onclick="event.stopPropagation();pipeUpdateSummaries()"
-            onchange="pipeUpdateSummaries()">
+          <input type="checkbox" id="pipe-crop-en" onclick="event.stopPropagation();pipeUpdateSummaries();wmDrawFrame()"
+            onchange="pipeUpdateSummaries();wmDrawFrame()">
           <span class="step-label">⧉ Crop</span>
           <span class="step-summary" id="pipe-crop-summary">disabled</span>
         </div>
         <div class="pipe-step-body" id="pipe-crop-body">
           <div class="row"><label>Ratio</label>
-            <select id="pipe-crop-ratio" onchange="pipeUpdateSummaries()">
+            <select id="pipe-crop-ratio" onchange="pipeUpdateSummaries();wmDrawFrame()">
               <option value="9:16">9:16 Shorts</option>
               <option value="16:9">16:9 Video</option>
               <option value="1:1">1:1 Square</option>
@@ -669,7 +738,7 @@ button.export-btn:hover{filter:brightness(1.1)}
           </div>
           <div class="row"><label>X pos</label>
             <input type="range" id="pipe-crop-x" min="0" max="100" value="50"
-              oninput="document.getElementById('pipe-crop-xv').textContent=this.value+'%';pipeUpdateSummaries()">
+              oninput="document.getElementById('pipe-crop-xv').textContent=this.value+'%';pipeUpdateSummaries();wmDrawFrame()">
             <span class="val" id="pipe-crop-xv">50%</span>
           </div>
           <div class="hint" style="margin-bottom:4px">Uses keyframes from Crop tool if available</div>
@@ -1050,7 +1119,7 @@ function cropUpdateRatioInfo() {
   document.getElementById('crop-ratio-info').textContent = `Output: ${cw}×${cropInfo.height}px`
 }
 
-window.cropOnRatioChange = () => { cropUpdateRatioInfo(); cropDrawOverlay() }
+window.cropOnRatioChange = () => { cropUpdateRatioInfo(); cropDrawOverlay(); if(wmVideoPath) wmDrawFrame() }
 
 function cropGetRect() {
   const W = cropOverlay.offsetWidth, H = cropOverlay.offsetHeight
@@ -1105,7 +1174,7 @@ function cropUpdateSlider() {
 window.cropOnSlider = v => {
   cropX = v/100; document.getElementById('crop-pct').textContent = `${v}%`; cropDrawOverlay()
 }
-window.cropOnSliderRelease = () => { if (cropKfMode) cropAddKf() }
+window.cropOnSliderRelease = () => { if (cropKfMode) cropAddKf(); if(wmVideoPath) wmDrawFrame() }
 
 function cropInterpKf(t) {
   if (!cropKeyframes.length) return cropX
@@ -1332,6 +1401,24 @@ document.addEventListener('keydown', e => {
   // Allow button only for Space (play/pause)
   if (document.activeElement.tagName === 'BUTTON' && e.code !== 'Space') return
 
+  // ── Global shortcuts (work in any pane) ──────────────────────────────
+  if (e.key === '?') {
+    e.preventDefault()
+    document.getElementById('shortcuts-modal').classList.toggle('open')
+    return
+  }
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'))
+    return
+  }
+  // Number keys → switch pane
+  const paneMap = {'1':'crop','2':'trim','3':'wm','4':'pipeline','5':'settings'}
+  if (paneMap[e.key]) {
+    e.preventDefault()
+    switchTool(paneMap[e.key])
+    return
+  }
+
   const pane = document.querySelector('.tool-pane.active')?.id
 
   // ── CROP shortcuts ────────────────────────────────────────────────────
@@ -1397,6 +1484,24 @@ document.addEventListener('keydown', e => {
       case 'ArrowDown':
         e.preventDefault()
         trimStepBy(e.shiftKey ? -5 : -1)
+        break
+    }
+  }
+
+  // ── WM shortcuts ─────────────────────────────────────────────────────────
+  if (pane === 'pane-wm') {
+    switch (e.code) {
+      case 'Space':
+        e.preventDefault()
+        wmTogglePlay()
+        break
+      case 'ArrowLeft':
+        e.preventDefault()
+        if (wmVid) { wmVid.currentTime = Math.max(0, wmVid.currentTime - (e.shiftKey ? 5 : 1)); wmDrawFrame() }
+        break
+      case 'ArrowRight':
+        e.preventDefault()
+        if (wmVid) { wmVid.currentTime = Math.min(wmVid.duration || 0, wmVid.currentTime + (e.shiftKey ? 5 : 1)); wmDrawFrame() }
         break
     }
   }
@@ -1516,11 +1621,189 @@ window.saveThumbnail = async () => {
 // WATERMARK TOOL  — multi-layer
 // ══════════════════════════════════════════════════════════════════════════
 let wmVideoPath = '', wmPreviewTimer = null
-const wmLog = new Logger(document.getElementById('wm-log'))
+const wmLog    = new Logger(document.getElementById('wm-log'))
+const wmVid    = document.getElementById('wm-vid')
+const wmCanvas = document.getElementById('wm-canvas')
+const wmCtx    = wmCanvas.getContext('2d')
+
+// Cache of loaded Image objects keyed by server path
+const wmImgCache = {}
+function wmGetImg(path) {
+  if (wmImgCache[path]) return wmImgCache[path]
+  const img = new Image()
+  img.crossOrigin = 'anonymous'
+  img.src = `${API()}/image?path=${encodeURIComponent(path)}`
+  img.onload  = () => { wmImgCache[path] = img; wmDrawFrame() }
+  img.onerror = () => { wmImgCache[path] = null }
+  return img
+}
+
+// ── Canvas composite renderer ─────────────────────────────────────────────
+let wmRafId = null
+let wmPlaying = false
+
+function wmDrawFrame() {
+  const W = wmCanvas.offsetWidth || wmCanvas.parentElement.offsetWidth
+  const H = wmCanvas.offsetHeight || wmCanvas.parentElement.offsetHeight
+  if (!W || !H) {
+    if (wmPlaying) wmRafId = requestAnimationFrame(wmDrawFrame)
+    return
+  }
+
+  wmCanvas.width  = W
+  wmCanvas.height = H
+
+  // Draw video frame — readyState >= 2 means current frame is available
+  // If seeking/buffering, keep RAF going but skip drawing to avoid blank flash
+  if (wmVid.readyState < 2) {
+    if (wmPlaying) wmRafId = requestAnimationFrame(wmDrawFrame)
+    return
+  }
+  if (wmVid.readyState >= 2) {
+    const vw = wmVid.videoWidth, vh = wmVid.videoHeight
+    if (vw && vh) {
+      wmCtx.fillStyle = '#000'
+      wmCtx.fillRect(0, 0, W, H)
+
+      // ── Simulate crop if crop tool has a video loaded ────────────────
+      // This makes WM positions match the final cropped output exactly.
+      // Uses crop tool state directly — no need to open Pipeline tab first.
+      let srcX = 0, srcY = 0, srcW = vw, srcH = vh
+
+      if (typeof cropInfo !== 'undefined' && cropInfo &&
+          cropInfo.width === vw && cropInfo.height === vh) {
+        // Crop tool has the same video loaded — use its ratio and position
+        const ratioEl = document.getElementById('crop-ratio')
+        if (ratioEl) {
+          const [rw, rh] = ratioEl.value.split(':').map(Number)
+          let cW = Math.round(vh * rw / rh)
+          if (cW > vw) cW = vw
+          const maxX = vw - cW
+          // Get interpolated crop_x at current time if keyframes active
+          const t = wmVid.currentTime
+          let cx_frac = (typeof cropX !== 'undefined') ? cropX : 0.5
+          if (typeof cropKfMode !== 'undefined' && cropKfMode &&
+              typeof cropKeyframes !== 'undefined' && cropKeyframes.length >= 2) {
+            cx_frac = cropInterpKf(t)
+          }
+          srcX = Math.round(maxX * cx_frac)
+          srcW = cW
+          srcH = vh
+        }
+      }
+
+      // Draw the (possibly cropped) video region letterboxed into the canvas
+      const scale = Math.min(W / srcW, H / srcH)
+      const dw = srcW * scale, dh = srcH * scale
+      const ox = (W - dw) / 2, oy = (H - dh) / 2
+      wmCtx.drawImage(wmVid, srcX, srcY, srcW, srcH, ox, oy, dw, dh)
+
+      // Draw each active WM slot (skip if none — video still shows)
+      const elapsed = performance.now() / 1000  // seconds for animation
+
+      wmSlots.filter(s => s.wmPath).forEach(slot => {
+        const img = wmGetImg(slot.wmPath)
+        if (!img || !img.complete || img.naturalWidth === 0) return
+
+        // Scale WM relative to the drawn video width (which is the cropped width when crop active)
+        const wmW = (img.naturalWidth * slot.scalePct / 100) * scale
+        const wmH = wmW * (img.naturalHeight / img.naturalWidth)
+        const pad = slot.padding * scale
+
+        // Base position — relative to the drawn region (ox/oy/dw/dh)
+        const positions = {
+          'top-left':     [ox + pad,              oy + pad],
+          'top-center':   [ox + dw/2 - wmW/2,     oy + pad],
+          'top-right':    [ox + dw - wmW - pad,   oy + pad],
+          'center-left':  [ox + pad,              oy + dh/2 - wmH/2],
+          'center':       [ox + dw/2 - wmW/2,     oy + dh/2 - wmH/2],
+          'center-right': [ox + dw - wmW - pad,   oy + dh/2 - wmH/2],
+          'bottom-left':  [ox + pad,              oy + dh - wmH - pad],
+          'bottom-center':[ox + dw/2 - wmW/2,     oy + dh - wmH - pad],
+          'bottom-right': [ox + dw - wmW - pad,   oy + dh - wmH - pad],
+        }
+        let [bx, by] = positions[slot.position] || positions['bottom-right']
+        const A = slot.animAmplitude * scale
+        const s = slot.animSpeed
+
+        // Animation
+        let drawX = bx, drawY = by, alpha = slot.opacity / 100
+        switch (slot.animation) {
+          case 'pendulum':
+            drawX = bx + A * Math.sin(2 * Math.PI * s * elapsed)
+            drawY = by + (A/2) * Math.sin(2 * Math.PI * s * elapsed + Math.PI/2)
+            break
+          case 'float':
+            drawY = by + A * Math.sin(2 * Math.PI * s * elapsed)
+            break
+          case 'bounce': {
+            const maxX = dw - wmW, maxY = dh - wmH
+            drawX = ox + Math.abs(((elapsed * s * 200) % (maxX * 2)) - maxX)
+            drawY = oy + Math.abs(((elapsed * s * 130) % (maxY * 2)) - maxY)
+            break
+          }
+          case 'fade':
+            alpha = (slot.opacity / 100) * Math.abs(Math.sin(Math.PI * s * elapsed))
+            break
+        }
+
+        wmCtx.save()
+        wmCtx.globalAlpha = Math.max(0, Math.min(1, alpha))
+        wmCtx.drawImage(img, drawX, drawY, wmW, wmH)
+        wmCtx.restore()
+      })
+    }
+  } else {
+    wmCtx.fillStyle = '#000'
+    wmCtx.fillRect(0, 0, W, H)
+  }
+
+  // Update scrubber + progress bar
+  if (wmVid.duration) {
+    wmScrub.setCurrent(wmVid.currentTime)
+    const pct = wmVid.currentTime / wmVid.duration * 100
+    document.getElementById('wm-progress-bar').style.width = pct + '%'
+  }
+
+  // Keep RAF loop going while playing or has animation
+  const hasAnim = wmSlots.some(s => s.wmPath && s.animation !== 'none')
+  if (wmPlaying || hasAnim) {
+    wmRafId = requestAnimationFrame(wmDrawFrame)
+  } else {
+    wmRafId = null
+  }
+}
+
+// Patch: also update scrubber/progress even when video is seeking (readyState < 2)
+wmVid.addEventListener('seeking',  () => { if (wmPlaying) wmStartLoop() })
+wmVid.addEventListener('seeked',   () => { wmDrawFrame() })
+wmVid.addEventListener('waiting',  () => { if (wmPlaying) wmStartLoop() })
+wmVid.addEventListener('canplay',  () => { wmDrawFrame(); if (wmPlaying) wmStartLoop() })
+
+function wmStartLoop() {
+  if (!wmRafId) wmRafId = requestAnimationFrame(wmDrawFrame)
+}
+function wmStopLoop() {
+  if (wmRafId) { cancelAnimationFrame(wmRafId); wmRafId = null }
+}
 
 const wmScrub = new Scrubber(document.getElementById('wm-scrub'), {
-  onDrag: () => { wmRefreshPreview() },
-  onSeek: () => { wmRefreshPreview() }
+  onDrag: t => {
+    wmVid._wasPlaying = !wmVid.paused
+    if (!wmVid.paused) wmVid.pause()
+    wmVid.currentTime = t
+    wmDrawFrame()
+  },
+  onSeek: t => {
+    wmVid.currentTime = t
+    wmDrawFrame()
+    // Resume if was playing before drag
+    if (wmVid._wasPlaying) {
+      wmVid.play()
+      wmPlaying = true
+      wmStartLoop()
+    }
+  }
 })
 
 // ── Slot state ────────────────────────────────────────────────────────────
@@ -1722,8 +2005,47 @@ async function wmLoadVideo(path, filename) {
     document.getElementById('wm-output').value = filename.replace(/\.[^/.]+$/,'') + '_wm.mp4'
     document.getElementById('wm-export-btn').disabled = false
     wmLog.append(`Loaded: ${info.width}×${info.height}`, 'ok')
-    wmRefreshPreview()
+
+    // Set up hidden video element
+    // Remove previous timeupdate handler to avoid accumulation
+    if (wmVid._timeUpdateHandler) {
+      wmVid.removeEventListener('timeupdate', wmVid._timeUpdateHandler)
+    }
+    wmVid._timeUpdateHandler = () => { if (!wmPlaying) wmDrawFrame() }
+    wmVid.addEventListener('timeupdate', wmVid._timeUpdateHandler)
+
+    wmVid.src = `${API()}/video?path=${encodeURIComponent(path)}`
+    wmVid.load()
+    wmVid.addEventListener('loadedmetadata', () => {
+      wmScrub.setDuration(wmVid.duration)
+      wmDrawFrame()
+    }, { once: true })
   } catch(e) { wmLog.append(`Error: ${e}`,'err') }
+}
+
+window.wmTogglePlay = () => {
+  if (!wmVideoPath) return
+  if (wmVid.paused) {
+    wmVid.play()
+    wmPlaying = true
+    wmStartLoop()
+    const btn = document.getElementById('wm-play-btn')
+    const ov  = document.getElementById('wm-play-overlay')
+    const ic  = document.getElementById('wm-play-icon')
+    if (btn) { btn.textContent = '⏸'; btn.classList.add('playing') }
+    if (ov)  ov.classList.remove('paused')
+    if (ic)  ic.textContent = '⏸'
+  } else {
+    wmVid.pause()
+    wmPlaying = false
+    wmDrawFrame()
+    const btn = document.getElementById('wm-play-btn')
+    const ov  = document.getElementById('wm-play-overlay')
+    const ic  = document.getElementById('wm-play-icon')
+    if (btn) { btn.textContent = '▶'; btn.classList.remove('playing') }
+    if (ov)  ov.classList.add('paused')
+    if (ic)  ic.textContent = '▶'
+  }
 }
 
 window.wmUseLastResult = () => {
@@ -1735,37 +2057,12 @@ window.wmUseLastResult = () => {
 
 // ── Preview ───────────────────────────────────────────────────────────────
 window.wmRefreshPreview = () => {
-  if (!wmVideoPath) return
-  const activeLayers = wmSlots.filter(s => s.wmPath)
-  if (!activeLayers.length) return
-  clearTimeout(wmPreviewTimer)
-  wmPreviewTimer = setTimeout(async () => {
-    const body = {
-      video_path: wmVideoPath,
-      t: wmScrub.current,
-      w: 960,
-      layers: activeLayers.map(s => ({
-        wm_path:        s.wmPath,
-        position:       s.position,
-        scale_pct:      s.scalePct,
-        opacity:        s.opacity / 100,
-        padding:        s.padding,
-        animation:      s.animation,
-        anim_speed:     s.animSpeed,
-        anim_amplitude: s.animAmplitude,
-      }))
-    }
-    try {
-      const r = await fetch(`${API()}/wm/preview`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(body)
-      })
-      if (!r.ok) return
-      const blob = await r.blob()
-      document.getElementById('wm-preview-img').src = URL.createObjectURL(blob)
-    } catch {}
-  }, 400)
+  // Preload any new WM images and redraw
+  wmSlots.filter(s => s.wmPath).forEach(s => wmGetImg(s.wmPath))
+  wmDrawFrame()
+  // If any animation is active, keep the RAF loop running
+  const hasAnim = wmSlots.some(s => s.wmPath && s.animation !== 'none')
+  if (hasAnim) wmStartLoop()
 }
 
 // ── Export ────────────────────────────────────────────────────────────────
@@ -2090,5 +2387,65 @@ window.pipeExport = async () => {
 })()
 
 </script>
+<!-- Shortcuts modal -->
+<div class="modal-overlay" id="shortcuts-modal">
+  <div class="modal shortcuts-modal">
+    <div class="modal-header">
+      <span class="title">⌨ Keyboard Shortcuts</span>
+      <button class="flat" onclick="document.getElementById('shortcuts-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="shortcuts-grid">
+
+      <div class="shortcut-section">
+        <h4 class="crop-h">⧉ Crop</h4>
+        <div class="shortcut-row"><span class="desc">Play / Pause</span><kbd class="kbd">Space</kbd></div>
+        <div class="shortcut-row"><span class="desc">Enable KF + Add keyframe</span><kbd class="kbd">K</kbd></div>
+        <div class="shortcut-row"><span class="desc">Seek ±1s</span><kbd class="kbd">←</kbd><kbd class="kbd">→</kbd></div>
+        <div class="shortcut-row"><span class="desc">Seek ±5s</span><kbd class="kbd">⇧</kbd><kbd class="kbd">←</kbd><kbd class="kbd">→</kbd></div>
+      </div>
+
+      <div class="shortcut-section">
+        <h4 class="trim-h">✂ Trim</h4>
+        <div class="shortcut-row"><span class="desc">Play / Pause</span><kbd class="kbd">Space</kbd></div>
+        <div class="shortcut-row"><span class="desc">Set IN point</span><kbd class="kbd">I</kbd></div>
+        <div class="shortcut-row"><span class="desc">Set OUT point</span><kbd class="kbd">O</kbd></div>
+        <div class="shortcut-row"><span class="desc">Seek ±1s</span><kbd class="kbd">←</kbd><kbd class="kbd">→</kbd></div>
+        <div class="shortcut-row"><span class="desc">Seek ±5s</span><kbd class="kbd">⇧</kbd><kbd class="kbd">←</kbd><kbd class="kbd">→</kbd></div>
+      </div>
+
+      <div class="shortcut-section">
+        <h4 style="color:var(--wm)">◈ Watermark</h4>
+        <div class="shortcut-row"><span class="desc">Play / Pause</span><kbd class="kbd">Space</kbd></div>
+        <div class="shortcut-row"><span class="desc">Seek ±1s</span><kbd class="kbd">←</kbd><kbd class="kbd">→</kbd></div>
+        <div class="shortcut-row"><span class="desc">Seek ±5s</span><kbd class="kbd">⇧←→</kbd></div>
+      </div>
+
+      <div class="shortcut-section">
+        <h4 class="global-h">⚡ Global</h4>
+        <div class="shortcut-row"><span class="desc">Show shortcuts</span><kbd class="kbd">?</kbd></div>
+        <div class="shortcut-row"><span class="desc">Go to Crop</span><kbd class="kbd">1</kbd></div>
+        <div class="shortcut-row"><span class="desc">Go to Trim</span><kbd class="kbd">2</kbd></div>
+        <div class="shortcut-row"><span class="desc">Go to WM</span><kbd class="kbd">3</kbd></div>
+        <div class="shortcut-row"><span class="desc">Go to Pipeline</span><kbd class="kbd">4</kbd></div>
+        <div class="shortcut-row"><span class="desc">Go to Settings</span><kbd class="kbd">5</kbd></div>
+      </div>
+
+      <div class="shortcut-section">
+        <h4 class="global-h">💡 Tips</h4>
+        <div class="shortcut-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <span class="desc">Shortcuts only fire when focus is not in a text input</span>
+        </div>
+        <div class="shortcut-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <span class="desc">Crop/Trim/WM shortcuts only work in their respective pane</span>
+        </div>
+        <div class="shortcut-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <span class="desc">Click the video preview or press Space to play</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
